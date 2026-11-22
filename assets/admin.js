@@ -7,7 +7,7 @@ const root = document.getElementById('admin');
 const SPORTS = [['Run', 'Chạy bộ'], ['TrailRun', 'Chạy trail'], ['VirtualRun', 'Máy chạy bộ'], ['Walk', 'Đi bộ'], ['Hike', 'Leo núi']];
 const DEFAULT_RULES = { minPace: 4, maxPace: 18, sportTypes: ['Run', 'TrailRun', 'VirtualRun'], allowManual: false, minDistanceKm: 0, paceBasis: 'moving', showOtherSports: false };
 
-const S = { cfg: null, sha: null, dirty: false, user: null, demo: false, athletes: [], tab: 'events', evIdx: 0, lockedIds: new Set() };
+const S = { cfg: null, sha: null, dirty: false, user: null, demo: false, athletes: [], tab: 'events', evIdx: 0, saved: new WeakSet(), manualId: new WeakSet() };
 
 document.getElementById('logo-mark').innerHTML = icon.lock;
 if (BASE) document.getElementById('viewSite').href = './?demo';
@@ -113,6 +113,7 @@ function validate() {
     if (!e.name) errs.push(`${label}: thiếu tên`);
     if (!e.id) errs.push(`${label}: thiếu mã`);
     else if (ids.has(e.id)) errs.push(`${label}: mã "${e.id}" bị trùng`);
+    else if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(e.id)) errs.push(`${label}: mã giải chỉ được có chữ thường, số và dấu gạch ngang`);
     ids.add(e.id);
     if (!e.start || !e.end) errs.push(`${label}: thiếu ngày`);
     else if (e.start > e.end) errs.push(`${label}: ngày bắt đầu sau ngày kết thúc`);
@@ -138,7 +139,7 @@ async function save() {
   try {
     S.sha = await ghSaveConfig(repoInfo(cfg()), cfg(), S.sha, 'BTC cập nhật cấu hình');
     S.dirty = false;
-    events().forEach((e) => S.lockedIds.add(e.id));
+    events().forEach((e) => S.saved.add(e));
     toast('Đã lưu! Trang web sẽ cập nhật sau ~1–2 phút.');
     renderPanel();
   } catch (e) {
@@ -207,7 +208,7 @@ function newEvent() {
   const today = todayIn(tz());
   const end = new Date(Date.parse(today) + 29 * 86400e3).toISOString().slice(0, 10);
   const targets = Object.fromEntries(groups().map((g) => [g, 50]));
-  targets.default = 50;
+  if (!groups().length) targets.default = 50;
   return { id: '', name: '', description: '', start: today, end, targets, rules: {}, participants: 'all', targetOverrides: {}, overrides: {}, manualActivities: [] };
 }
 
@@ -231,7 +232,7 @@ function eventEditor(e, i) {
   const defaults = { ...DEFAULT_RULES, ...(cfg().defaultRules || {}) };
   const r = e.rules || {};
   const eff = { ...defaults, ...r };
-  const locked = S.lockedIds.has(e.id);
+  const locked = S.saved.has(e);
   const allMode = !Array.isArray(e.participants);
   const selected = new Set((Array.isArray(e.participants) ? e.participants : []).map(String));
   const jm = joinedMap();
@@ -239,7 +240,7 @@ function eventEditor(e, i) {
   if (cfg().autoAddJoined !== false) {
     for (const a of S.athletes) if (!a.revoked && !pool.some((m) => String(m.stravaId) === String(a.id))) pool.push({ stravaId: a.id, name: a.name, group: a.group, auto: true });
   }
-  const tgKeys = [...groups(), 'default'];
+  const tgKeys = groups().length ? groups() : ['default'];
   const overrides = Object.entries(e.overrides || {});
   const mas = e.manualActivities || [];
 
@@ -254,8 +255,8 @@ function eventEditor(e, i) {
     ${sec(icon.calendar, 'Thông tin giải', '', `
       <div class="grid g2">
         <label class="field"><span>Tên giải *</span><input data-path='${P('events', i, 'name')}' data-autoid="1" value="${esc(e.name)}" placeholder="VD: Chạy vì sức khoẻ tháng 12"></label>
-        <label class="field"><span>Mã giải (dùng trong link)</span><input data-path='${P('events', i, 'id')}' value="${esc(e.id)}" ${locked ? 'readonly' : ''}>
-          <div class="hint">${locked ? 'Đã khoá để không làm hỏng link cũ.' : 'Tự tạo từ tên giải.'}</div></label>
+        <label class="field"><span>Mã giải (dùng trong link)</span><input data-path='${P('events', i, 'id')}' data-eventid="1" value="${esc(e.id)}" placeholder="vd: giai-chay-thang-12" autocapitalize="off" spellcheck="false">
+          <div class="hint">${locked ? '⚠️ Đổi mã sẽ đổi link của giải, link cũ đã gửi đi sẽ không mở được nữa.' : 'Tự tạo từ tên giải, có thể sửa. Chỉ dùng chữ thường, số và dấu gạch ngang.'}</div></label>
         <label class="field"><span>Ngày bắt đầu *</span><input type="date" data-path='${P('events', i, 'start')}' value="${esc(e.start)}"></label>
         <label class="field"><span>Ngày kết thúc *</span><input type="date" data-path='${P('events', i, 'end')}' value="${esc(e.end)}"></label>
       </div>
@@ -263,7 +264,7 @@ function eventEditor(e, i) {
 
     ${sec(icon.target, 'Mục tiêu km', 'Mỗi nhóm một mức. Thêm nhóm khác (U40, 40+…) ở tab Cài đặt.', `
       <div class="grid g4">
-        ${tgKeys.map((g) => `<label class="field"><span>${g === 'default' ? 'Không có nhóm' : esc(g)}</span>
+        ${tgKeys.map((g) => `<label class="field"><span>${g === 'default' ? 'Mục tiêu' : esc(g)}</span>
           <input type="number" inputmode="decimal" min="0" step="0.1" data-type="number" data-path='${P('events', i, 'targets', g)}' value="${e.targets?.[g] ?? ''}" placeholder="km"></label>`).join('')}
       </div>`)}
 
@@ -406,7 +407,7 @@ function applyInput(el) {
   setPath(cfg(), JSON.parse(el.dataset.path), readInput(el));
   if (el.dataset.autoid) {
     const e = events()[S.evIdx];
-    if (!S.lockedIds.has(e.id)) {
+    if (!S.saved.has(e) && !S.manualId.has(e)) {
       e.id = slugify(e.name);
       const idInput = root.querySelector(`[data-path='${JSON.stringify(['events', S.evIdx, 'id'])}']`);
       if (idInput) idInput.value = e.id;
@@ -419,11 +420,21 @@ function applyInput(el) {
 
 function onInput(ev) {
   const el = ev.target;
+  if (el.dataset.eventid) S.manualId.add(events()[S.evIdx]);
   if (el.dataset.path && el.tagName !== 'SELECT' && el.type !== 'checkbox' && !el.dataset.rerender) applyInput(el);
 }
 
 function onChange(ev) {
   const el = ev.target;
+  if (el.dataset.eventid) {
+    const e = events()[S.evIdx];
+    const v = slugify(el.value);
+    el.value = v;
+    e.id = v;
+    S.manualId.add(e);
+    markDirty();
+    return;
+  }
   if (el.dataset.sports) {
     const all = [...root.querySelectorAll(`[data-sports='${el.dataset.sports}']`)].filter((x) => x.checked).map((x) => x.value);
     setPath(cfg(), JSON.parse(el.dataset.sports), all);
@@ -529,7 +540,7 @@ async function boot() {
     }
   }
   S.athletes = await getJSON('data/athletes.json', []);
-  events().forEach((e) => S.lockedIds.add(e.id));
+  events().forEach((e) => S.saved.add(e));
 
   renderShell();
   renderSavebar();
