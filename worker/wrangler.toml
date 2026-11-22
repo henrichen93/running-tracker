@@ -18,3 +18,6 @@ id = "3b9654d0b8e14786a29a9e6084ae4935"
 # Kích hoạt sync đúng :00 :15 :30 :45 (giờ UTC; phút giống mọi múi giờ)
 [triggers]
 crons = ["0,15,30,45 * * * *"]
+
+[observability]
+enabled = true

@@ -31,6 +31,9 @@ config.events = [
     start, end,
     targets: { Nam: 150, Nữ: 100, default: 100 },
     overrides: { 900005: { status: 'invalid', reason: 'Chạy hộ' } },
+    participants: 'joined',
+    addedParticipants: ['1999'],
+    removedParticipants: [],
     manualActivities: [{ athleteId: '1003', date: start, distanceKm: 10, movingTime: '1:02:00', name: 'Giải chạy offline' }],
   },
 ];
@@ -43,7 +46,7 @@ const athletes = [];
 let aid = 900000;
 for (let i = 0; i < NAMES.length; i++) {
   const id = String(1000 + i);
-  athletes.push({ id, name: NAMES[i][0], avatar: '', group: NAMES[i][1], joinedAt: new Date().toISOString(), revoked: false });
+  athletes.push({ id, name: NAMES[i][0], avatar: '', group: NAMES[i][1], joinedAt: new Date().toISOString(), revoked: false, events: ['demo-thang-nay'] });
   const acts = [];
   const freq = 0.3 + rnd() * 0.6;
   for (let d = new Date(start); d <= today; d = new Date(d.getTime() + 86400e3)) {

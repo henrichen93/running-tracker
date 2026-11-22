@@ -94,6 +94,7 @@ async function renderEvent(id) {
       <div class="row">${heroStatusChip(e.status)}<span class="chip chip-glass">${icon.calendar} ${fmtDate(e.start)} – ${fmtDate(e.end)}</span></div>
       <h1>${esc(e.name)}</h1>
       ${e.description ? `<p class="lead">${esc(e.description)}</p>` : ''}
+      ${e.status !== 'finished' && config.strava?.workerUrl ? `<div class="row mt"><a class="btn btn-strava" href="#/join/${encodeURIComponent(e.id)}">${icon.strava} Tham gia giải này</a></div>` : ''}
       <div class="hero-stats">
         <div class="hero-stat"><div class="k">Tổng quãng đường</div><div class="v">${fmtKm(e.totalKm, 1)}<small>km</small></div></div>
         <div class="hero-stat"><div class="k">Vận động viên</div><div class="v">${e.participants}</div></div>
@@ -345,33 +346,45 @@ async function renderAthlete(eventId, athleteId) {
 }
 
 // ---------------- Join ----------------
-function renderJoin() {
+async function renderJoin(preselect) {
   setNav('join');
   const workerUrl = (config.strava?.workerUrl || '').replace(/\/+$/, '');
   const groups = config.groups || [];
+  const index = await getJSON('data/index.json', { events: [] });
+  const open = index.events.filter((e) => e.status !== 'finished').sort((a, b) => (a.start < b.start ? -1 : 1));
+  const chosen = open.find((e) => e.id === preselect) ? preselect : open[0]?.id;
+
   app.innerHTML = `<div class="join fade-in">
     <section class="hero">
       <div class="big-icon">${icon.run}</div>
       <h1 style="font-size:28px">Tham gia giải chạy</h1>
-      <p class="lead" style="margin:0 auto">Kết nối Strava <b>một lần duy nhất</b>, mọi buổi chạy sau đó sẽ tự động được tính.</p>
+      <p class="lead" style="margin:0 auto">Chọn giải và kết nối Strava. Buổi chạy trong thời gian giải sẽ tự động được tính.</p>
     </section>
     <div class="card mt">
-      ${!workerUrl ? `<div class="notice">${icon.alert}<span>Ban tổ chức chưa cấu hình kết nối Strava. Vui lòng quay lại sau.</span></div>` : `
-      ${groups.length ? `<div class="mb"><div class="small muted" style="font-weight:600;margin-bottom:8px">Bạn thuộc nhóm</div>
+      ${!workerUrl ? `<div class="notice">${icon.alert}<span>Ban tổ chức chưa cấu hình kết nối Strava. Vui lòng quay lại sau.</span></div>`
+      : !open.length ? `<div class="notice">${icon.alert}<span>Hiện chưa có giải nào mở đăng ký.</span></div>` : `
+      <div class="mb"><div class="pick-label">Giải bạn muốn tham gia</div>
+        <div class="event-pick">${open.map((e) => `<label>
+          <input type="radio" name="event" value="${esc(e.id)}" ${e.id === chosen ? 'checked' : ''}>
+          <span class="ep-main"><b>${esc(e.name)}</b><span class="muted small">${fmtDate(e.start)} – ${fmtDate(e.end)} · ${e.participants} người</span></span>
+          ${statusChip(e.status)}
+        </label>`).join('')}</div></div>
+      ${groups.length ? `<div class="mb"><div class="pick-label">Bạn thuộc nhóm</div>
         <div class="group-pick">${groups.map((g, i) => `<label><input type="radio" name="group" value="${esc(g)}" ${i === 0 ? 'checked' : ''}>${esc(g)}</label>`).join('')}</div></div>` : ''}
       <ol class="steps mt">
         <li><span>Bấm nút bên dưới và đăng nhập Strava</span></li>
-        <li><span>Giữ nguyên dấu tick <b>"View data about your activities"</b> rồi bấm <b>Authorize</b></span></li>
-        <li><span>Xong! Mỗi buổi chạy sẽ lên bảng xếp hạng sau khoảng 15 phút</span></li>
+        <li><span>Giữ nguyên dấu tick <b>"View data about your activities"</b> rồi bấm <b>Authorize</b>. Nếu đã kết nối từ giải trước, Strava sẽ tự chuyển về luôn.</span></li>
+        <li><span>Xong! Mỗi buổi chạy trong thời gian giải sẽ lên bảng xếp hạng sau khoảng 15 phút</span></li>
       </ol>
-      <button class="btn btn-strava btn-lg btn-block mt-lg" id="connect">${icon.strava} Kết nối với Strava</button>
+      <button class="btn btn-strava btn-lg btn-block mt-lg" id="connect">${icon.strava} Tham gia bằng Strava</button>
       <p class="small muted mt" style="margin-bottom:0">🔒 Chỉ đọc hoạt động, không đăng bài hay thay đổi gì trên Strava. Hoạt động để chế độ "Chỉ mình tôi" sẽ không được tính.
-      Muốn rút khỏi giải: Strava → Settings → My Apps → Revoke Access.</p>`}
+      Muốn ngừng kết nối: Strava → Settings → My Apps → Revoke Access.</p>`}
     </div>
   </div>`;
   document.getElementById('connect')?.addEventListener('click', () => {
     const g = document.querySelector('input[name="group"]:checked')?.value || '';
-    location.href = `${workerUrl}/auth?group=${encodeURIComponent(g)}`;
+    const ev = document.querySelector('input[name="event"]:checked')?.value || '';
+    location.href = `${workerUrl}/auth?group=${encodeURIComponent(g)}&event=${encodeURIComponent(ev)}`;
   });
 }
 
@@ -391,7 +404,7 @@ function renderJoined(params) {
          <h2 style="margin-top:12px">Kết nối thành công!</h2>
          <p>Chào <b>${esc(params.get('name') || '')}</b>, bạn đã sẵn sàng tham gia.</p>
          <p class="muted small">Từ giờ mỗi buổi chạy sẽ tự lên bảng xếp hạng sau khoảng 15 phút.</p>
-         <a class="btn btn-primary btn-lg mt" href="#/">Xem bảng xếp hạng</a>`}
+         <a class="btn btn-primary btn-lg mt" href="#/${params.get('event') ? 'e/' + encodeURIComponent(params.get('event')) : ''}">Xem bảng xếp hạng</a>`}
   </div></div>`;
 }
 
@@ -403,7 +416,7 @@ async function route() {
   try {
     if (parts[0] === 'e' && parts[2] === 'u') await renderAthlete(parts[1], parts[3]);
     else if (parts[0] === 'e') await renderEvent(parts[1]);
-    else if (parts[0] === 'join') renderJoin();
+    else if (parts[0] === 'join') await renderJoin(parts[1]);
     else if (parts[0] === 'joined') renderJoined(new URLSearchParams(query));
     else await renderHome();
   } catch (err) {

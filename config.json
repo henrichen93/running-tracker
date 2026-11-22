@@ -44,10 +44,14 @@
         "default": 40
       },
       "rules": {},
-      "participants": "all",
+      "participants": "joined",
       "targetOverrides": {},
       "overrides": {},
-      "manualActivities": []
+      "manualActivities": [],
+      "addedParticipants": [
+        "156604644"
+      ],
+      "removedParticipants": []
     },
     {
       "id": "giai-chay-thang-12-2026",
@@ -61,10 +65,12 @@
         "default": 40
       },
       "rules": {},
-      "participants": "all",
+      "participants": "joined",
       "targetOverrides": {},
       "overrides": {},
-      "manualActivities": []
+      "manualActivities": [],
+      "addedParticipants": [],
+      "removedParticipants": []
     }
   ]
 }

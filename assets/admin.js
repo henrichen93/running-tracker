@@ -204,12 +204,22 @@ const sec = (ic, title, desc, body) => `<section class="card sec">
   <div class="sec-body">${body}</div></section>`;
 
 // ---------- Events ----------
+// Giống scripts/sync.mjs: người tham gia gốc trước khi BTC thêm/bớt
+function baseParticipants(e) {
+  if (Array.isArray(e.participants)) return e.participants.map(String);
+  if (e.participants === 'all') {
+    const ids = members().map((m) => String(m.stravaId));
+    if (cfg().autoAddJoined !== false) S.athletes.filter((a) => !a.revoked).forEach((a) => ids.push(String(a.id)));
+    return [...new Set(ids)];
+  }
+  return S.athletes.filter((a) => !a.revoked && (a.events || []).includes(e.id)).map((a) => String(a.id));
+}
 function newEvent() {
   const today = todayIn(tz());
   const end = new Date(Date.parse(today) + 29 * 86400e3).toISOString().slice(0, 10);
   const targets = Object.fromEntries(groups().map((g) => [g, 50]));
   if (!groups().length) targets.default = 50;
-  return { id: '', name: '', description: '', start: today, end, targets, rules: {}, participants: 'all', targetOverrides: {}, overrides: {}, manualActivities: [] };
+  return { id: '', name: '', description: '', start: today, end, targets, rules: {}, participants: 'joined', addedParticipants: [], removedParticipants: [], targetOverrides: {}, overrides: {}, manualActivities: [] };
 }
 
 function eventsView() {
@@ -233,8 +243,11 @@ function eventEditor(e, i) {
   const r = e.rules || {};
   const eff = { ...defaults, ...r };
   const locked = S.saved.has(e);
-  const allMode = !Array.isArray(e.participants);
-  const selected = new Set((Array.isArray(e.participants) ? e.participants : []).map(String));
+  const mode = e.participants === 'all' ? 'all' : 'joined';
+  const base = new Set(baseParticipants(e));
+  const added = new Set((e.addedParticipants || []).map(String));
+  const removed = new Set((e.removedParticipants || []).map(String));
+  const isIn = (id) => (base.has(id) || added.has(id)) && !removed.has(id);
   const jm = joinedMap();
   const pool = [...members()];
   if (cfg().autoAddJoined !== false) {
@@ -279,24 +292,37 @@ function eventEditor(e, i) {
       <label class="opt mt"><input type="checkbox" data-type="bool" data-path='${P('events', i, 'rules', 'allowManual')}' ${eff.allowManual ? 'checked' : ''}>
         <div><b>Chấp nhận hoạt động nhập tay trên Strava</b><span>Không có GPS nên dễ gian lận. Mặc định: không chấp nhận.</span></div></label>`)}
 
-    ${sec(icon.users, 'Người tham gia', '', `
-      <label class="opt"><input type="radio" name="pmode" data-action="pmode" value="all" ${allMode ? 'checked' : ''}>
-        <div><b>Tất cả thành viên</b><span>Khuyên dùng: ai kết nối Strava là được tính.</span></div></label>
-      <label class="opt"><input type="radio" name="pmode" data-action="pmode" value="pick" ${allMode ? '' : 'checked'}>
-        <div><b>Chỉ một số người</b><span>Tick chọn người tham gia ở danh sách bên dưới.</span></div></label>
+    ${(() => {
+      const rows = [...pool].sort((a, b) => isIn(String(b.stravaId)) - isIn(String(a.stravaId)) || String(a.name).localeCompare(String(b.name), 'vi'));
+      const count = pool.filter((m) => isIn(String(m.stravaId))).length;
+      const joinLink = new URL(`./${BASE ? '?demo' : ''}#/join/${encodeURIComponent(e.id)}`, location.href).href;
+      return sec(icon.users, `Người tham gia (${count})`, 'Tick để thêm người vào giải này, bỏ tick để loại khỏi giải.', `
+      <label class="opt"><input type="radio" name="pmode" data-action="pmode" value="joined" ${mode === 'joined' ? 'checked' : ''}>
+        <div><b>Chỉ người bấm tham gia giải này</b><span>Khuyên dùng. Gửi link mời bên dưới, ai bấm tham gia thì được tính.</span></div></label>
+      <label class="opt"><input type="radio" name="pmode" data-action="pmode" value="all" ${mode === 'all' ? 'checked' : ''}>
+        <div><b>Tất cả thành viên</b><span>Mọi người đã kết nối Strava đều được tính, không cần bấm tham gia.</span></div></label>
+      ${locked && mode === 'joined' ? `<div class="row mt"><input readonly value="${esc(joinLink)}" id="evJoin${i}" style="flex:1;min-width:200px">
+        <button class="btn" data-action="copy-evjoin" data-target="evJoin${i}">${icon.copy} Copy link mời</button></div>` : ''}
+      ${!locked && mode === 'joined' ? '<p class="hint">Lưu giải xong sẽ có link mời riêng cho giải này.</p>' : ''}
       ${pool.length ? `<div class="rt-wrap scroll-y mt"><table class="rt">
-        <thead><tr>${allMode ? '' : '<th></th>'}<th>Tên</th><th>Nhóm</th><th>Strava</th><th>Mục tiêu riêng</th></tr></thead>
-        <tbody>${pool.map((m) => {
+        <thead><tr><th>Tham gia</th><th>Tên</th><th>Nhóm</th><th>Nguồn</th><th>Strava</th><th>Mục tiêu riêng</th></tr></thead>
+        <tbody>${rows.map((m) => {
           const id = String(m.stravaId);
+          const on = isIn(id);
           const def = e.targets?.[m.group] ?? e.targets?.default ?? '';
-          return `<tr>
-            ${allMode ? '' : `<td data-label="Tham gia"><input type="checkbox" data-pick="${esc(id)}" ${selected.has(id) ? 'checked' : ''} style="flex:none"></td>`}
+          const src = removed.has(id) ? '<span class="chip chip-bad">BTC loại</span>'
+            : added.has(id) && !base.has(id) ? '<span class="chip chip-brand">BTC thêm</span>'
+            : base.has(id) ? (mode === 'all' ? '<span class="chip">Tất cả</span>' : '<span class="chip chip-ok">Tự tham gia</span>') : '<span class="muted">–</span>';
+          return `<tr style="${on ? '' : 'opacity:.6'}">
+            <td data-label="Tham gia"><input type="checkbox" data-pick="${esc(id)}" ${on ? 'checked' : ''} style="flex:none"></td>
             <td data-label="Tên"><b>${esc(m.name)}</b></td>
             <td data-label="Nhóm">${esc(m.group || '–')}</td>
+            <td data-label="Nguồn">${src}</td>
             <td data-label="Strava">${jm.has(id) && !jm.get(id).revoked ? '<span class="chip chip-ok">Đã kết nối</span>' : '<span class="chip chip-warn">Chưa kết nối</span>'}</td>
             <td data-label="Mục tiêu riêng" style="width:150px"><input type="number" inputmode="decimal" min="0" step="0.1" data-type="number" data-path='${P('events', i, 'targetOverrides', id)}' value="${e.targetOverrides?.[id] ?? ''}" placeholder="${def} km"></td>
           </tr>`;
-        }).join('')}</tbody></table></div>` : '<p class="muted small mt">Chưa có thành viên. Gửi link Tham gia (tab Thành viên) cho mọi người.</p>'}`)}
+        }).join('')}</tbody></table></div>` : '<p class="muted small mt">Chưa có ai kết nối Strava.</p>'}`);
+    })()}
 
     ${sec(icon.plus, 'Km bổ sung thủ công', 'Cho người quên bật Strava, chạy giải offline… Vẫn áp dụng quy tắc pace.', `
       ${mas.length ? `<div class="rt-wrap"><table class="rt">
@@ -330,7 +356,7 @@ function membersView() {
   const joinUrl = new URL(`./${BASE ? '?demo' : ''}#/join`, location.href).href;
   const auto = cfg().autoAddJoined !== false;
   return `<div class="fade-in">
-    ${sec(icon.strava, 'Mời mọi người tham gia', `Gửi link vào group chat công ty. Mỗi người chọn nhóm và kết nối Strava, ${auto ? '<b>tự động có tên trên bảng xếp hạng</b>' : 'sau đó bạn thêm họ ở bên dưới'}.`, `
+    ${sec(icon.strava, 'Mời mọi người tham gia', 'Gửi link vào group chat công ty. Mỗi người chọn giải muốn tham gia, chọn nhóm rồi kết nối Strava. Mỗi giải cũng có link mời riêng trong tab Giải chạy.', `
       <div class="row"><input readonly value="${esc(joinUrl)}" id="joinUrl" style="flex:1;min-width:200px"><button class="btn btn-primary" data-action="copy-join">${icon.copy} Copy link</button></div>`)}
 
     ${notIn.length ? sec(icon.check, `Đã kết nối Strava (${notIn.length})`, auto ? 'Những người này đã được tính điểm. Bấm "Thêm" nếu muốn sửa tên hoặc nhóm của họ.' : 'Bấm "Thêm" để đưa họ vào giải.', `
@@ -441,13 +467,19 @@ function onChange(ev) {
     markDirty();
   } else if (el.dataset.pick) {
     const e = events()[S.evIdx];
-    const set = new Set((e.participants || []).map(String));
-    el.checked ? set.add(el.dataset.pick) : set.delete(el.dataset.pick);
-    e.participants = [...set];
+    const id = el.dataset.pick;
+    const base = new Set(baseParticipants(e));
+    const added = new Set((e.addedParticipants || []).map(String));
+    const removed = new Set((e.removedParticipants || []).map(String));
+    if (el.checked) { removed.delete(id); if (!base.has(id)) added.add(id); }
+    else { added.delete(id); if (base.has(id)) removed.add(id); }
+    e.addedParticipants = [...added];
+    e.removedParticipants = [...removed];
     markDirty();
+    renderPanel();
   } else if (el.dataset.action === 'pmode') {
     const e = events()[S.evIdx];
-    e.participants = el.value === 'all' ? 'all' : members().map((m) => String(m.stravaId));
+    e.participants = el.value === 'all' ? 'all' : 'joined';
     markDirty();
     renderPanel();
   } else if (el.dataset.path && (el.tagName === 'SELECT' || el.type === 'checkbox' || el.dataset.rerender)) {
@@ -475,6 +507,8 @@ function onClick(ev) {
       copy.id = slugify(copy.name);
       copy.overrides = {};
       copy.manualActivities = [];
+      copy.addedParticipants = [];
+      copy.removedParticipants = [];
       events().push(copy);
       S.evIdx = events().length - 1;
       break;
@@ -492,6 +526,7 @@ function onClick(ev) {
     case 'm-addjoined': addMember(b.dataset.id); break;
     case 'm-addalljoined': S.athletes.filter((x) => !x.revoked).forEach((x) => addMember(x.id)); break;
     case 'copy-join': navigator.clipboard?.writeText(document.getElementById('joinUrl').value); toast('Đã copy link'); return;
+    case 'copy-evjoin': navigator.clipboard?.writeText(document.getElementById(b.dataset.target).value); toast('Đã copy link mời'); return;
     case 'm-bulk':
       document.getElementById('bulk').innerHTML = `<div class="mb">
         <label class="field"><span>Mỗi dòng một người: Họ tên, Strava ID, Nhóm</span>

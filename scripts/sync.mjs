@@ -207,6 +207,7 @@ async function main() {
         group: a.group || '',
         joinedAt: a.joinedAt || '',
         revoked: !!a.revoked,
+        events: Array.isArray(a.events) ? a.events : [],
       }));
       await writeIfChanged(path.join(DATA, 'athletes.json'), joined, true);
     } catch (e) {
@@ -230,9 +231,18 @@ async function main() {
 
   // 3. Giải chạy & người tham gia
   const events = (config.events || []).filter((e) => e.id && e.start && e.end);
+  // Người tham gia mỗi giải:
+  //   "joined" (mặc định): chỉ người tự bấm Tham gia giải đó
+  //   "all": tất cả thành viên
+  //   [ids]: danh sách cố định (kiểu cũ)
+  // + addedParticipants (BTC thêm tay) − removedParticipants (BTC loại khỏi giải)
   const participantsOf = (e) => {
-    if (!Array.isArray(e.participants)) return members.map((m) => m.id);
-    return e.participants.map(String);
+    let base;
+    if (Array.isArray(e.participants)) base = e.participants.map(String);
+    else if (e.participants === 'all') base = members.map((m) => m.id);
+    else base = joined.filter((j) => !j.revoked && (j.events || []).includes(e.id)).map((j) => j.id);
+    const removed = new Set((e.removedParticipants || []).map(String));
+    return [...new Set([...base, ...(e.addedParticipants || []).map(String)])].filter((id) => !removed.has(id));
   };
   const athleteEvents = new Map();
   for (const e of events) {

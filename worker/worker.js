@@ -13,7 +13,7 @@
 //   KV binding: ATHLETES
 //
 // Routes:
-//   GET /auth?group=Nam            -> chuyển sang trang cấp quyền Strava
+//   GET /auth?group=Nam&event=<id> -> chuyển sang trang cấp quyền Strava, tham gia giải <id>
 //   GET /callback                  -> Strava gọi lại, lưu token, chuyển về web
 //   GET /athletes   (Bearer SYNC_KEY) -> danh sách người đã kết nối
 //   GET /token/:id  (Bearer SYNC_KEY) -> access token còn hạn của 1 người
@@ -68,7 +68,9 @@ function siteRedirect(env, hash) {
 }
 
 function auth(url, env) {
-  const state = (url.searchParams.get('group') || '').slice(0, 40);
+  const group = (url.searchParams.get('group') || '').replace(/\|/g, '').slice(0, 40);
+  const event = (url.searchParams.get('event') || '').replace(/[^a-z0-9-]/g, '').slice(0, 80);
+  const state = `${group}|${event}`;
   const params = new URLSearchParams({
     client_id: env.STRAVA_CLIENT_ID,
     redirect_uri: `${url.origin}/callback`,
@@ -103,19 +105,26 @@ async function callback(url, env) {
   const t = await res.json();
   const a = t.athlete || {};
   const name = [a.firstname, a.lastname].filter(Boolean).join(' ').trim() || `Strava ${a.id}`;
+  const [group = '', event = ''] = (url.searchParams.get('state') || '').split('|');
+  // Giữ lại các giải đã tham gia trước đó, thêm giải vừa bấm tham gia
+  const prev = (await env.ATHLETES.getWithMetadata(`athlete:${a.id}`)).metadata || {};
+  let events = [...new Set([...(prev.events || []), ...(event ? [event] : [])])];
   const meta = {
     name,
     avatar: a.profile_medium || '',
-    group: (url.searchParams.get('state') || '').slice(0, 40),
-    joinedAt: new Date().toISOString(),
+    group: group || prev.group || '',
+    joinedAt: prev.joinedAt || new Date().toISOString(),
     revoked: false,
+    events,
   };
+  // KV metadata tối đa 1024 byte: bỏ bớt giải cũ nhất nếu quá dài
+  while (JSON.stringify(meta).length > 1000 && meta.events.length > 1) meta.events = meta.events.slice(1);
   await env.ATHLETES.put(
     `athlete:${a.id}`,
     JSON.stringify({ refresh_token: t.refresh_token, access_token: t.access_token, expires_at: t.expires_at }),
     { metadata: meta },
   );
-  return siteRedirect(env, `/joined?id=${a.id}&name=${encodeURIComponent(name)}`);
+  return siteRedirect(env, `/joined?id=${a.id}&name=${encodeURIComponent(name)}&event=${encodeURIComponent(event)}`);
 }
 
 async function listAthletes(env) {
@@ -235,7 +244,10 @@ async function clearDirty(req, env) {
 
 // ---------- Kích hoạt GitHub Actions ----------
 async function dispatchSync(env, mode) {
-  if (!env.GH_REPO || !env.GH_DISPATCH_TOKEN) return;
+  if (!env.GH_REPO || !env.GH_DISPATCH_TOKEN) {
+    await env.ATHLETES.put('meta:lastDispatch', JSON.stringify({ at: new Date().toISOString(), error: 'missing GH_REPO or GH_DISPATCH_TOKEN' }));
+    return;
+  }
   const res = await fetch(`https://api.github.com/repos/${env.GH_REPO}/actions/workflows/sync.yml/dispatches`, {
     method: 'POST',
     headers: {
@@ -246,5 +258,8 @@ async function dispatchSync(env, mode) {
     },
     body: JSON.stringify({ ref: env.GH_BRANCH || 'main', inputs: { mode } }),
   });
-  if (!res.ok) console.error('GitHub dispatch failed', res.status, await res.text());
+  const text = res.ok ? '' : (await res.text()).slice(0, 500);
+  if (!res.ok) console.error('GitHub dispatch failed', res.status, text);
+  // Lưu kết quả lần kích hoạt gần nhất để kiểm tra: wrangler kv key get meta:lastDispatch --binding ATHLETES --remote
+  await env.ATHLETES.put('meta:lastDispatch', JSON.stringify({ at: new Date().toISOString(), status: res.status, error: text }));
 }
