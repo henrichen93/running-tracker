@@ -4,9 +4,12 @@
     "subtitle": "Cùng nhau chạy, cùng nhau khoẻ",
     "timezone": "Asia/Ho_Chi_Minh"
   },
-  "groups": ["Nam", "Nữ"],
+  "groups": [
+    "Nam",
+    "Nữ"
+  ],
   "strava": {
-    "workerUrl": ""
+    "workerUrl": "https://running-tracker-strava.khoata-dev.workers.dev"
   },
   "github": {
     "owner": "",
@@ -17,7 +20,11 @@
   "defaultRules": {
     "minPace": 4,
     "maxPace": 18,
-    "sportTypes": ["Run", "TrailRun", "VirtualRun"],
+    "sportTypes": [
+      "Run",
+      "TrailRun",
+      "VirtualRun"
+    ],
     "allowManual": false,
     "minDistanceKm": 0,
     "paceBasis": "moving",
@@ -31,7 +38,11 @@
       "description": "Chạy tích luỹ km trong tháng 12.",
       "start": "2026-12-01",
       "end": "2026-12-31",
-      "targets": { "Nam": 60, "Nữ": 40, "default": 40 },
+      "targets": {
+        "Nam": 60,
+        "Nữ": 40,
+        "default": 40
+      },
       "rules": {},
       "participants": "all",
       "targetOverrides": {},
