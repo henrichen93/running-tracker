@@ -353,11 +353,16 @@ function membersView() {
   const ms = members();
   const inList = new Set(ms.map((m) => String(m.stravaId)));
   const notIn = S.athletes.filter((a) => !inList.has(String(a.id)));
-  const joinUrl = new URL(`./${BASE ? '?demo' : ''}#/join`, location.href).href;
+  const joinLink = (id) => new URL(`./${BASE ? '?demo' : ''}#/join/${encodeURIComponent(id)}`, location.href).href;
+  const openEvents = events().filter((e) => S.saved.has(e) && e.id && statusOf(e) !== 'finished');
   const auto = cfg().autoAddJoined !== false;
   return `<div class="fade-in">
-    ${sec(icon.strava, 'Mời mọi người tham gia', 'Gửi link vào group chat công ty. Mỗi người chọn giải muốn tham gia, chọn nhóm rồi kết nối Strava. Mỗi giải cũng có link mời riêng trong tab Giải chạy.', `
-      <div class="row"><input readonly value="${esc(joinUrl)}" id="joinUrl" style="flex:1;min-width:200px"><button class="btn btn-primary" data-action="copy-join">${icon.copy} Copy link</button></div>`)}
+    ${sec(icon.strava, 'Link mời tham gia', 'Mỗi giải một link riêng. Gửi link của giải nào thì người bấm vào được tính ở giải đó.', openEvents.length
+      ? openEvents.map((e, k) => `<div class="mb">
+          <div class="small" style="font-weight:700;margin-bottom:6px">${esc(e.name)} <span class="muted" style="font-weight:500">· ${fmtDate(e.start)} – ${fmtDate(e.end)}</span></div>
+          <div class="row"><input readonly value="${esc(joinLink(e.id))}" id="mJoin${k}" style="flex:1;min-width:200px">
+          <button class="btn btn-primary" data-action="copy-evjoin" data-target="mJoin${k}">${icon.copy} Copy link</button></div></div>`).join('')
+      : '<p class="muted small" style="margin:0">Chưa có giải nào đang mở. Tạo và lưu giải ở tab Giải chạy để có link mời.</p>')}
 
     ${notIn.length ? sec(icon.check, `Đã kết nối Strava (${notIn.length})`, auto ? 'Những người này đã được tính điểm. Bấm "Thêm" nếu muốn sửa tên hoặc nhóm của họ.' : 'Bấm "Thêm" để đưa họ vào giải.', `
       <div class="rt-wrap"><table class="rt"><thead><tr><th>Tên Strava</th><th>Strava ID</th><th>Nhóm</th><th>Kết nối lúc</th><th></th></tr></thead><tbody>
@@ -525,7 +530,6 @@ function onClick(ev) {
     case 'm-del': members().splice(Number(b.dataset.k), 1); break;
     case 'm-addjoined': addMember(b.dataset.id); break;
     case 'm-addalljoined': S.athletes.filter((x) => !x.revoked).forEach((x) => addMember(x.id)); break;
-    case 'copy-join': navigator.clipboard?.writeText(document.getElementById('joinUrl').value); toast('Đã copy link'); return;
     case 'copy-evjoin': navigator.clipboard?.writeText(document.getElementById(b.dataset.target).value); toast('Đã copy link mời'); return;
     case 'm-bulk':
       document.getElementById('bulk').innerHTML = `<div class="mb">

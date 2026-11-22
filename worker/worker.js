@@ -251,7 +251,7 @@ async function dispatchSync(env, mode) {
   const res = await fetch(`https://api.github.com/repos/${env.GH_REPO}/actions/workflows/sync.yml/dispatches`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.GH_DISPATCH_TOKEN}`,
+      Authorization: `Bearer ${String(env.GH_DISPATCH_TOKEN).trim()}`,
       Accept: 'application/vnd.github+json',
       'User-Agent': 'running-tracker-worker',
       'X-GitHub-Api-Version': '2022-11-28',
