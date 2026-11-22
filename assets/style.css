@@ -111,7 +111,7 @@ h3 { font-size: 16px; margin: 0; font-weight: 700; }
 .topnav a.active { color: var(--ink); background: var(--surface-2); }
 .topnav a.cta { background: var(--ink); color: var(--surface); }
 .topnav a.cta:hover { opacity: 0.9; }
-@media (max-width: 560px) { .topnav a:not(.cta) { display: none; } }
+
 
 main.wrap { padding-top: 40px; padding-bottom: 80px; }
 @media (max-width: 720px) { main.wrap { padding-top: 24px; } }

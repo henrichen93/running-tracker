@@ -65,9 +65,8 @@ async function renderHome() {
         <div class="hero-stat"><div class="k">Tổng km đã chạy</div><div class="v">${fmtKm(totalKm, 0)}<small>km</small></div></div>
         <div class="hero-stat"><div class="k">Đang diễn ra</div><div class="v">${ongoing.length}<small>giải</small></div></div>
       </div>` : ''}
-      <div class="row mt"><a class="btn btn-strava" href="#/join">${icon.strava} Tham gia bằng Strava</a></div>
     </section>
-    ${!events.length ? `<div class="card empty mt"><div class="icon">${icon.flag}</div><h2>Chưa có giải chạy nào</h2><p>Ban tổ chức sẽ sớm mở giải. Bạn có thể kết nối Strava trước!</p></div>` : ''}
+    ${!events.length ? `<div class="card empty mt"><div class="icon">${icon.flag}</div><h2>Chưa có giải chạy nào</h2><p>Ban tổ chức sẽ sớm mở giải.</p></div>` : ''}
     ${ongoing.length ? `<div class="section-title"><h2>Đang diễn ra</h2></div><div class="events">${ongoing.map((e) => card(e)).join('')}</div>` : ''}
     ${rest.length ? `<div class="section-title"><h2>${ongoing.length ? 'Các giải khác' : 'Giải chạy'}</h2></div><div class="events">${rest.map((e) => card(e)).join('')}</div>` : ''}
   </div>`;
