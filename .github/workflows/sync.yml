@@ -1,0 +1,82 @@
+name: Sync Strava & Deploy
+
+on:
+  # Lịch chính: Cloudflare Worker cron gọi workflow_dispatch (mode=auto) đúng :00 :15 :30 :45.
+  # Lịch dự phòng của GitHub (hay trễ), phòng khi Worker cron chưa cấu hình / lỗi:
+  schedule:
+    - cron: '7 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'auto = chỉ người có thay đổi, full = quét toàn bộ'
+        required: false
+        default: full
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'data/**'
+      - '**.md'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: sync-deploy
+  cancel-in-progress: false # lần sau xếp hàng chờ lần trước xong
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Sync
+        env:
+          SYNC_KEY: ${{ secrets.SYNC_KEY }}
+        run: |
+          case "${{ github.event_name }}/${{ inputs.mode }}" in
+            push/*) node scripts/sync.mjs --recompute ;;
+            workflow_dispatch/full) node scripts/sync.mjs --full ;;
+            *) node scripts/sync.mjs ;;
+          esac
+      - name: Commit data
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "Không có thay đổi"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "chore: sync data $(date -u +%Y-%m-%dT%H:%MZ)"
+            git pull --rebase origin ${{ github.ref_name }}
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    needs: sync
+    # Sync tự động mà dữ liệu không đổi thì không deploy lại
+    if: needs.sync.outputs.changed == 'true' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode != 'auto')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

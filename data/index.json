@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-11-22T14:45:04.251Z",
+  "today": "2026-11-22",
+  "events": [
+    {
+      "id": "giai-chay-thang-12-2026",
+      "name": "Giải chạy tháng 12/2026",
+      "description": "Chạy tích luỹ km trong tháng 12.",
+      "start": "2026-12-01",
+      "end": "2026-12-31",
+      "status": "upcoming",
+      "participants": 0,
+      "totalKm": 0,
+      "completed": 0,
+      "activities": 0
+    }
+  ]
+}

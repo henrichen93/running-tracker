@@ -1,0 +1,42 @@
+{
+  "site": {
+    "title": "Giải chạy nội bộ",
+    "subtitle": "Cùng nhau chạy, cùng nhau khoẻ",
+    "timezone": "Asia/Ho_Chi_Minh"
+  },
+  "groups": ["Nam", "Nữ"],
+  "strava": {
+    "workerUrl": ""
+  },
+  "github": {
+    "owner": "",
+    "repo": "",
+    "branch": "main"
+  },
+  "autoAddJoined": true,
+  "defaultRules": {
+    "minPace": 4,
+    "maxPace": 18,
+    "sportTypes": ["Run", "TrailRun", "VirtualRun"],
+    "allowManual": false,
+    "minDistanceKm": 0,
+    "paceBasis": "moving",
+    "showOtherSports": false
+  },
+  "members": [],
+  "events": [
+    {
+      "id": "giai-chay-thang-12-2026",
+      "name": "Giải chạy tháng 12/2026",
+      "description": "Chạy tích luỹ km trong tháng 12.",
+      "start": "2026-12-01",
+      "end": "2026-12-31",
+      "targets": { "Nam": 60, "Nữ": 40, "default": 40 },
+      "rules": {},
+      "participants": "all",
+      "targetOverrides": {},
+      "overrides": {},
+      "manualActivities": []
+    }
+  ]
+}

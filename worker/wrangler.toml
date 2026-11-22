@@ -1,0 +1,19 @@
+name = "running-tracker-strava"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+STRAVA_CLIENT_ID = "THAY_BANG_CLIENT_ID"
+SITE_URL = "https://henrichen93.github.io/running-tracker/"
+# Muốn tính cả hoạt động để chế độ "Chỉ mình tôi" thì đổi thành "read,activity:read_all"
+STRAVA_SCOPE = "read,activity:read"
+GH_REPO = "henrichen93/running-tracker"
+GH_BRANCH = "main"
+
+[[kv_namespaces]]
+binding = "ATHLETES"
+id = "THAY_BANG_KV_ID"
+
+# Kích hoạt sync đúng :00 :15 :30 :45 (giờ UTC; phút giống mọi múi giờ)
+[triggers]
+crons = ["0,15,30,45 * * * *"]

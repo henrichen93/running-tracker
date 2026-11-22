@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0f1424">
+  <title>Ban tổ chức</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%230f1424'/><text x='50' y='70' font-size='56' text-anchor='middle'>🔒</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .admin-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .admin-head h1 { font-size: 26px; }
+    .tabs { position: sticky; top: 65px; z-index: 20; background: var(--bg); padding: 8px 0 12px; margin-bottom: 4px; }
+    .tabs .seg { width: 100%; display: flex; }
+    .tabs .seg button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .tabs .seg svg { width: 16px; height: 16px; }
+    .user-chip { display: inline-flex; align-items: center; gap: 8px; padding: 4px 4px 4px 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-weight: 600; font-size: 13.5px; }
+    .user-chip img { width: 28px; height: 28px; border-radius: 50%; }
+    .user-chip .btn { min-height: 28px; height: 28px; padding: 0 10px; border-radius: 999px; }
+
+    .layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .ev-list { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 130px; }
+    .ev-item { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 12px 14px; cursor: pointer; color: inherit; transition: 0.15s; }
+    .ev-item:hover { border-color: color-mix(in srgb, var(--brand) 40%, var(--line)); }
+    .ev-item.on { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent); }
+    .ev-item b { display: block; font-size: 14.5px; }
+    .ev-item .small { margin-top: 4px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .ev-list { position: static; flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 6px; margin: 0; }
+      .ev-list > * { flex: none; scroll-snap-align: start; }
+      .ev-item { width: 220px; }
+      .ev-list .btn { width: auto; align-self: stretch; height: auto; }
+      .ev-item { padding: 10px 12px; }
+    }
+    .ed-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+    .ed-head h2 { margin: 0; flex: 1; min-width: 0; }
+    @media (max-width: 560px) {
+      .admin-head h1 { font-size: 22px; flex-basis: 100%; }
+      .ed-head h2 { flex-basis: 100%; font-size: 19px; }
+      .tabs .seg button { padding: 0 8px; font-size: 13.5px; }
+    }
+
+    .sec { padding: 0; overflow: hidden; }
+    .sec + .sec { margin-top: 14px; }
+    .sec-head { display: flex; gap: 12px; align-items: flex-start; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+    .sec-head .ic { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand-ink); flex: none; }
+    .sec-head .ic svg { width: 18px; height: 18px; }
+    .sec-head p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+    .sec-body { padding: 18px 20px 20px; }
+    @media (max-width: 560px) { .sec-head, .sec-body { padding-left: 16px; padding-right: 16px; } }
+
+    .grid { display: grid; gap: 14px; }
+    .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .g4 { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+    @media (max-width: 640px) { .g2, .g3 { grid-template-columns: 1fr; } }
+    label.field { display: block; min-width: 0; }
+    label.field > span { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--ink-2); }
+    .hint { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+    .checks { display: flex; flex-wrap: wrap; gap: 8px; }
+    .checks label { display: inline-flex; gap: 8px; align-items: center; padding: 0 14px; min-height: 42px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; background: var(--surface); }
+    .checks label:has(input:checked) { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-ink); }
+    .opt { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; cursor: pointer; }
+    .opt + .opt { border-top: 1px solid var(--line); }
+    .opt input { margin-top: 3px; }
+    .opt b { display: block; font-size: 14.5px; }
+    .opt span { font-size: 13px; color: var(--muted); }
+
+    /* responsive table */
+    .rt { width: 100%; border-collapse: collapse; }
+    .rt th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    .rt td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    .rt tr:last-child td { border-bottom: 0; }
+    .rt input, .rt select { min-height: 40px; }
+    .rt-wrap { margin: 0 -10px; }
+    .scroll-y { max-height: 460px; overflow: auto; }
+    @media (max-width: 720px) {
+      .rt-wrap { margin: 0; }
+      .rt thead { display: none; }
+      .rt, .rt tbody, .rt tr, .rt td { display: block; width: 100%; }
+      .rt tr { border: 1px solid var(--line); border-radius: 14px; padding: 6px 12px; margin-bottom: 10px; background: var(--surface); }
+      .rt td { border: 0; padding: 6px 0; display: flex; align-items: center; gap: 12px; width: 100% !important; }
+      .rt td[data-label]::before { content: attr(data-label); flex: 0 0 96px; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+      .rt td > :not(.chip) { flex: 1; min-width: 0; }
+      .rt td.actions { justify-content: flex-end; }
+      .rt td.actions > * { flex: none; }
+      .scroll-y { max-height: none; }
+    }
+
+    .savebar {
+      position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translate(-50%, 140%);
+      display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 18px; border-radius: 18px;
+      background: var(--ink); color: var(--surface); box-shadow: var(--shadow-lg); z-index: 40; transition: transform 0.25s ease;
+      width: min(560px, calc(100vw - 24px));
+    }
+    .savebar.show { transform: translate(-50%, 0); }
+    .savebar .msg { flex: 1; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+    .savebar .dot { color: var(--brand-2); }
+    .savebar .btn-ghost { color: var(--surface); }
+    .savebar .btn-ghost:hover { background: rgba(255, 255, 255, 0.1); }
+
+    .gate { max-width: 480px; margin: 24px auto 0; }
+    .gate .hero { text-align: center; padding: 32px 24px; }
+    .gate .lock { width: 64px; height: 64px; margin: 0 auto 6px; border-radius: 20px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.1); }
+    .gate .lock svg { width: 30px; height: 30px; }
+    details.how { margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; padding: 0 14px; }
+    details.how summary { cursor: pointer; font-weight: 600; font-size: 14px; padding: 12px 0; }
+    details.how ol { margin: 0 0 14px; padding-left: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
+    main.wrap { padding-bottom: 140px; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="logo" href="./"><span class="logo-mark" id="logo-mark"></span><span>Ban tổ chức</span></a>
+      <span class="spacer"></span>
+      <nav class="topnav"><a href="./" id="viewSite" style="display:inline-flex">Xem trang web ↗</a></nav>
+    </div>
+  </header>
+  <main class="wrap" id="admin"><div class="skeleton" style="height:300px;margin-top:24px"></div></main>
+  <div class="savebar" id="savebar"></div>
+  <script type="module" src="assets/admin.js"></script>
+</body>
+</html>
