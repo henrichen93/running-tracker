@@ -1,7 +1,7 @@
 import {
   getJSON, esc, fmtPace, fmtKm, fmtDuration, fmtDate, fmtDateShort, daysBetween, STATUS_LABEL,
   avatar, ring, icon, ghToken, repoInfo, ghCheckAdmin, ghLoadConfig, ghSaveConfig, toast, BASE,
-} from './common.js';
+} from './common.js?v=__V__';
 
 const app = document.getElementById('app');
 let config = null;

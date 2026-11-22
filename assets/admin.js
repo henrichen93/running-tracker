@@ -1,7 +1,7 @@
 import {
   getJSON, esc, fmtPace, parsePace, store, repoInfo, ghToken, ghCheckAdmin, ghLoadConfig, ghSaveConfig, ghRunSync,
   toast, slugify, todayIn, fmtDate, icon, avatar, BASE, isLocal,
-} from './common.js';
+} from './common.js?v=__V__';
 
 const root = document.getElementById('admin');
 const SPORTS = [['Run', 'Chạy bộ'], ['TrailRun', 'Chạy trail'], ['VirtualRun', 'Máy chạy bộ'], ['Walk', 'Đi bộ'], ['Hike', 'Leo núi']];
