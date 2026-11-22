@@ -1,7 +1,19 @@
 {
-  "generatedAt": "2026-11-22T14:45:04.251Z",
+  "generatedAt": "2026-11-22T15:24:06.989Z",
   "today": "2026-11-22",
   "events": [
+    {
+      "id": "test-thang-11-2026",
+      "name": "Test tháng 11/2026",
+      "description": "Giải thử để kiểm tra kết nối Strava. Xoá sau khi test xong.",
+      "start": "2026-11-01",
+      "end": "2026-11-30",
+      "status": "ongoing",
+      "participants": 1,
+      "totalKm": 121.1,
+      "completed": 1,
+      "activities": 44
+    },
     {
       "id": "giai-chay-thang-12-2026",
       "name": "Giải chạy tháng 12/2026",
@@ -9,7 +21,7 @@
       "start": "2026-12-01",
       "end": "2026-12-31",
       "status": "upcoming",
-      "participants": 0,
+      "participants": 1,
       "totalKm": 0,
       "completed": 0,
       "activities": 0
