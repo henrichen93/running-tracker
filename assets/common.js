@@ -206,6 +206,15 @@ async function gh(path, opts = {}) {
   });
   if (!r.ok) {
     const body = await r.json().catch(() => ({}));
+    if (r.status === 403) {
+      // Fine-grained token thiếu quyền: GitHub cho biết quyền cần có qua header này
+      const need = r.headers.get('x-accepted-github-permissions') || '';
+      const names = { contents: 'Contents', actions: 'Actions', metadata: 'Metadata' };
+      const missing = need.split(/[;,]/).map((s) => s.trim().split('=')).filter(([k]) => names[k])
+        .map(([k, v]) => `${names[k]}: ${v === 'write' ? 'Read and write' : 'Read'}`);
+      throw new Error(`GitHub 403: token thiếu quyền ${missing.length ? missing.join(', ') : 'ghi vào repo'}. ` +
+        'Tạo lại token với Contents: Read and write + Actions: Read and write, rồi Đăng xuất và đăng nhập lại.');
+    }
     throw new Error(`GitHub ${r.status}: ${body.message || r.statusText}`);
   }
   return r.status === 204 ? null : r.json();

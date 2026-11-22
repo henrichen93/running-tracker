@@ -77,7 +77,7 @@ function renderGate(res, repo) {
         <ol>
           <li>Mở <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a></li>
           <li><b>Repository access</b> → Only select repositories → chọn repo của giải</li>
-          <li><b>Permissions</b> → Contents: <b>Read and write</b>, Actions: <b>Read and write</b></li>
+          <li><b>Permissions</b> → bấm <b>Add permissions</b>, chọn <b>Contents</b> và <b>Actions</b>, đổi cả hai thành <b>Read and write</b> (mặc định là Read-only, lưu sẽ bị lỗi 403)</li>
           <li>Bấm <b>Generate token</b>, copy và dán vào ô trên</li>
         </ol>
         <p class="hint" style="margin:0 0 14px">Muốn thêm người vào BTC: repo → Settings → Collaborators → Add people. Token chỉ lưu trong trình duyệt này.</p>
