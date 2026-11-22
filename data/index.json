@@ -1,25 +1,13 @@
 {
-  "generatedAt": "2026-11-22T15:35:48.621Z",
+  "generatedAt": "2026-11-22T15:37:14.980Z",
   "today": "2026-11-22",
   "events": [
     {
-      "id": "test-thang-11-2026",
-      "name": "Test tháng 11/2026",
-      "description": "Giải thử để kiểm tra kết nối Strava. Xoá sau khi test xong.",
-      "start": "2026-11-01",
-      "end": "2026-11-30",
-      "status": "ongoing",
-      "participants": 1,
-      "totalKm": 121.1,
-      "completed": 1,
-      "activities": 44
-    },
-    {
-      "id": "giai-chay-thang-12-2026",
-      "name": "Giải chạy tháng 12/2026",
-      "description": "Chạy tích luỹ km trong tháng 12.",
-      "start": "2026-12-01",
-      "end": "2026-12-31",
+      "id": "2f-run4fun",
+      "name": "2f Run4fun",
+      "description": "Chạy tích luỹ km từ 23/11 đến 23:59 ngày 06/12. Nữ 15 km, Nam 25 km.",
+      "start": "2026-11-23",
+      "end": "2026-12-06",
       "status": "upcoming",
       "participants": 0,
       "totalKm": 0,
