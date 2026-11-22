@@ -315,7 +315,7 @@ async function renderAthlete(eventId, athleteId) {
     if (res.ok) {
       isAdmin = true;
       draw();
-      document.getElementById('adminNote').innerHTML = `<p class="small muted mt">${icon.lock} Đang đăng nhập admin (${esc(res.user.login)}). Thay đổi hiển thị sau khi đồng bộ xong (~1–2 phút).</p>`;
+      document.getElementById('adminNote').innerHTML = `<div class="notice info mt small">${icon.lock}<span>Đang đăng nhập admin <b>${esc(res.user.login)}</b>: bấm <b>Loại</b> / <b>Duyệt hợp lệ</b> ở từng hoạt động. Thay đổi hiển thị sau khi đồng bộ xong (~1–2 phút).</span></div>`;
       document.getElementById('acts').addEventListener('click', async (ev) => {
         const b = ev.target.closest('button[data-act]');
         if (!b) return;
