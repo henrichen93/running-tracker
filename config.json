@@ -42,7 +42,12 @@
         "Nam": 25,
         "Nữ": 15
       },
-      "rules": {},
+      "rules": {
+        "sportTypes": [
+          "Run",
+          "Walk"
+        ]
+      },
       "participants": "joined",
       "addedParticipants": [],
       "removedParticipants": [],
