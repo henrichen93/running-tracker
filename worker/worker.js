@@ -6,7 +6,7 @@
 //   SYNC_KEY              (secret)  - chuỗi ngẫu nhiên, GitHub Actions dùng để lấy token
 //   SITE_URL              (var)     - vd: https://yourname.github.io/running-tracker/
 //   STRAVA_SCOPE          (var, optional) - mặc định "read,activity:read"
-//   GH_REPO               (var)     - vd: khoata39/running-tracker
+//   GH_REPO               (var)     - vd: ten-ban/running-tracker
 //   GH_BRANCH             (var, optional) - mặc định main
 //   GH_DISPATCH_TOKEN     (secret)  - fine-grained token, chỉ cần quyền Actions: Read and write
 //   Cron trigger (wrangler.toml): 0,15,30,45 * * * * -> kích hoạt GitHub Actions sync đúng giờ
