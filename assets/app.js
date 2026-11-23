@@ -262,7 +262,7 @@ async function renderAthlete(eventId, athleteId) {
       <div class="stat"><div class="k">${icon.run} Lần chạy hợp lệ</div><div class="v">${a.validCount}</div></div>
       <div class="stat"><div class="k">${icon.timer} Pace trung bình</div><div class="v">${fmtPace(a.avgPace)}<small>/km</small></div></div>
       <div class="stat"><div class="k">${icon.route} Dài nhất</div><div class="v">${fmtKm(a.longestKm, 2)}<small>km</small></div></div>
-      <div class="stat ${a.invalidCount ? 'bad' : ''}"><div class="k">${icon.alert} Không hợp lệ</div><div class="v">${a.invalidCount}<small>${fmtKm(a.invalidKm, 1)} km</small></div></div>
+      <div class="stat ${a.invalidCount ? 'bad' : ''}"><div class="k">${icon.alert} Không hợp lệ</div><div class="v">${a.invalidCount}<small>lần</small></div></div>
     </div>
     <div class="card mt">
       <div class="card-head"><h3>Km hợp lệ theo ngày</h3><span class="grow"></span><span class="muted small">${a.activeDays} ngày có chạy</span></div>
