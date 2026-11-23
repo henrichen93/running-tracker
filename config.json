@@ -52,7 +52,12 @@
       "addedParticipants": [],
       "removedParticipants": [],
       "targetOverrides": {},
-      "overrides": {},
+      "overrides": {
+        "21089354802": {
+          "status": "invalid",
+          "reason": "Bị trùng"
+        }
+      },
       "manualActivities": []
     }
   ]
