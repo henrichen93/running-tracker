@@ -113,7 +113,7 @@ export function evaluate(a, rules, override) {
   if (override && (override.status === 'valid' || override.status === 'invalid')) {
     overridden = override.status;
     valid = override.status === 'valid';
-    if (!valid) reasons.push(`BTC loại${override.reason ? ': ' + override.reason : ''}`);
+    if (!valid) reasons.push(override.reason?.trim() || 'Không hợp lệ');
   }
 
   return {
