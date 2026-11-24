@@ -22,8 +22,7 @@
     "maxPace": 18,
     "sportTypes": [
       "Run",
-      "TrailRun",
-      "VirtualRun"
+      "Walk"
     ],
     "allowManual": false,
     "minDistanceKm": 0,
@@ -46,7 +45,8 @@
         "sportTypes": [
           "Run",
           "Walk"
-        ]
+        ],
+        "allowManual": true
       },
       "participants": "joined",
       "addedParticipants": [],
