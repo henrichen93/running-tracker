@@ -21,6 +21,7 @@ permissions:
   contents: write
   pages: write
   id-token: write
+  deployments: read
 
 concurrency:
   group: sync-deploy
@@ -32,6 +33,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       changed: ${{ steps.commit.outputs.changed }}
+      stale: ${{ steps.stale.outputs.stale }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -80,11 +82,27 @@ jobs:
             done
             exit 1
           fi
+      - name: Kiểm tra web có đang chạy bản mới nhất không
+        id: stale
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Lần deploy trước lỗi (Pages hay lỗi tạm thời) thì web bị kẹt bản cũ -> deploy lại
+          git fetch -q origin ${{ github.ref_name }}
+          HEAD_SHA=$(git rev-parse origin/${{ github.ref_name }})
+          LIVE=""
+          for row in $(gh api "repos/${{ github.repository }}/deployments?environment=github-pages&per_page=10" --jq '.[] | "\(.id),\(.sha)"'); do
+            id=${row%,*}; sha=${row#*,}
+            state=$(gh api "repos/${{ github.repository }}/deployments/$id/statuses?per_page=1" --jq '.[0].state // ""')
+            if [ "$state" = "success" ]; then LIVE=$sha; break; fi
+          done
+          echo "HEAD=$HEAD_SHA LIVE=$LIVE"
+          if [ "$LIVE" = "$HEAD_SHA" ]; then echo "stale=false" >> "$GITHUB_OUTPUT"; else echo "stale=true" >> "$GITHUB_OUTPUT"; fi
 
   deploy:
     needs: sync
     # Sync tự động mà dữ liệu không đổi thì không deploy lại
-    if: needs.sync.outputs.changed == 'true' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode != 'auto')
+    if: needs.sync.outputs.changed == 'true' || needs.sync.outputs.stale == 'true' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode != 'auto')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -101,5 +119,14 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
-      - id: deployment
+      - id: deploy1
         uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Chờ rồi thử deploy lại
+        if: steps.deploy1.outcome == 'failure'
+        run: sleep 30
+      - id: deploy2
+        if: steps.deploy1.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+      - id: deployment
+        run: echo "page_url=${{ steps.deploy1.outputs.page_url || steps.deploy2.outputs.page_url }}" >> "$GITHUB_OUTPUT"
