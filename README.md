@@ -55,7 +55,7 @@ npx wrangler deploy
 ```
 `GH_DISPATCH_TOKEN`: tạo tại https://github.com/settings/personal-access-tokens/new → chỉ chọn repo của giải →
 Permissions: **Actions: Read and write** (chỉ cần quyền này). Worker dùng nó để kích hoạt sync **đúng** :00, :15, :30, :45
-(lịch có sẵn của GitHub Actions hay trễ 5–15 phút, nên chỉ giữ làm dự phòng mỗi 3 tiếng).
+(lịch có sẵn của GitHub Actions hay trễ 5–15 phút, nên chỉ giữ làm dự phòng, chạy ở phút :02 :17 :32 :47).
 
 Lệnh deploy in ra URL, ví dụ `https://running-tracker-strava.<tên>.workers.dev`.
 
@@ -119,7 +119,7 @@ vì mọi thay đổi đi qua GitHub API và GitHub chặn những tài khoản 
 ## Giới hạn & lưu ý
 - **Lịch đồng bộ**: Cloudflare Worker cron `0,15,30,45 * * * *` (trong `worker/wrangler.toml`) gọi GitHub Actions đúng giờ.
   Sau khi được gọi, GitHub cần khoảng 10–30 giây để khởi động, sync xong sau khoảng 1 phút.
-  Lịch dự phòng của GitHub chạy mỗi 3 tiếng, phòng khi Worker cron lỗi.
+  Lịch dự phòng của GitHub cũng chạy mỗi 15 phút (có thể trễ), phòng khi Worker cron lỗi.
   Lần nào không có dữ liệu mới thì không commit, không deploy lại.
 - **Strava rate limit** (~100 request/15 phút, ~1.000/ngày): nhờ webhook, mỗi lần sync chỉ gọi Strava cho những người vừa có hoạt động mới.
   Ngoài ra cứ 3 tiếng sẽ quét toàn bộ một lần (đổi bằng `"sync": { "fullRefreshHours": 3 }` trong `config.json`),

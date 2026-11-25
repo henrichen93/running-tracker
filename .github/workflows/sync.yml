@@ -2,9 +2,9 @@ name: Sync Strava & Deploy
 
 on:
   # Lịch chính: Cloudflare Worker cron gọi workflow_dispatch (mode=auto) đúng :00 :15 :30 :45.
-  # Lịch dự phòng của GitHub (hay trễ), phòng khi Worker cron chưa cấu hình / lỗi:
+  # Lịch dự phòng của GitHub (có thể trễ vài phút), để vẫn tự sync khi Worker cron lỗi:
   schedule:
-    - cron: '7 */3 * * *'
+    - cron: '2,17,32,47 * * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -57,9 +57,28 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "chore: sync data $(date -u +%Y-%m-%dT%H:%MZ)"
-            git pull --rebase origin ${{ github.ref_name }}
-            git push
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            # Nếu main có commit mới (BTC sửa config / lần sync khác) thì rebase;
+            # xung đột ở file dữ liệu sinh ra -> lấy main mới, giữ cache activities vừa tải, tính lại.
+            for i in 1 2 3; do
+              if git pull --rebase origin ${{ github.ref_name }} && git push; then
+                echo "changed=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              echo "Push/rebase lỗi (lần $i) -> tính lại trên main mới nhất"
+              git rebase --abort 2>/dev/null || true
+              rm -rf /tmp/acts && cp -r data/activities /tmp/acts
+              git fetch origin ${{ github.ref_name }}
+              git reset --hard origin/${{ github.ref_name }}
+              mkdir -p data/activities && cp /tmp/acts/*.json data/activities/ 2>/dev/null || true
+              node scripts/sync.mjs --recompute
+              git add data
+              if git diff --cached --quiet; then
+                echo "changed=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+              git commit -m "chore: sync data $(date -u +%Y-%m-%dT%H:%MZ)"
+            done
+            exit 1
           fi
 
   deploy:
