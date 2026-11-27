@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-26T23:00:21.850Z",
+  "generatedAt": "2026-11-27T01:57:00.014Z",
   "today": "2026-11-27",
   "events": [
     {
@@ -10,9 +10,9 @@
       "end": "2026-12-06",
       "status": "ongoing",
       "participants": 7,
-      "totalKm": 55.7,
+      "totalKm": 56.7,
       "completed": 2,
-      "activities": 14
+      "activities": 15
     }
   ]
 }
